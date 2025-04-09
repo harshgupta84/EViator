@@ -5,7 +5,7 @@ import Webcam from 'react-webcam';
 import ReactMarkdown from 'react-markdown';
 import MultiLangIDE from './MultiLangIDE';
 import InterviwerCrad from './InterviwerCard';
-
+import { useNavigate } from 'react-router-dom';
 
 const vapi = new Vapi("89d9dcde-d231-405e-888b-634fb4c6ed91");
 interface Resume {
@@ -27,6 +27,7 @@ interface StoredData {
 }
 
 function VoiceAssistant() {
+
   const [storedData, setStoredData] = useState<StoredData | null>(null);
   const [isInterviewStarted, setIsInterviewStarted] = useState(false);
   const [isInterviewEnded, setIsInterviewEnded] = useState(false);
@@ -37,7 +38,7 @@ function VoiceAssistant() {
   const [questions, setQuestions] = useState<string[]>([]);
   const [feedback, setFeedback] = useState<string[]>([]);
   const [isVapiSpeaking, setIsVapiSpeaking] = useState(false);
-
+  const navigate = useNavigate();
   const supportedLanguages = [
     { label: 'JavaScript', value: 'javascript' },
     { label: 'Python', value: 'python' },
@@ -180,6 +181,9 @@ function VoiceAssistant() {
     const newCode = value || '';
     setCurrentCode(newCode);
     updateLocalStorage({ code: newCode });
+  };
+  const handleViewReport = () => {
+    navigate('/report');
   };
 
   return (
@@ -346,6 +350,14 @@ function VoiceAssistant() {
           </div>
         )}
       </div>
+      {(isInterviewEnded || storedData?.isCompleted) && (
+    <button
+      onClick={handleViewReport}
+      className="bg-green-500 text-white py-2 px-6 rounded-lg hover:bg-green-600 transition-colors flex items-center space-x-2"
+    >
+      <span>View Report</span>
+    </button>
+  )}
     </div>
   );
 }

@@ -7,13 +7,21 @@ export interface Resume {
 }
 
 export interface Interview {
-  id: string;
   candidateName: string;
-  questions: InterviewQuestion[];
+  status: 'completed' | 'in-progress';
+  questions: string[];
+  codeSubmissions: CodeSubmission[];
   audioUrl?: string;
   videoUrl?: string;
-  codeSubmissions: CodeSubmission[];
-  status: 'pending' | 'in-progress' | 'completed';
+  resume: {
+    fullName: string;
+    email: string;
+    experience: string;
+    education: string;
+    skills: string[];
+  };
+  feedback: string[];
+  totalDuration: number;
 }
 
 export interface InterviewQuestion {

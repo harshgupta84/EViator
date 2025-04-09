@@ -6,6 +6,8 @@ import ReactMarkdown from 'react-markdown';
 import MultiLangIDE from './MultiLangIDE';
 import InterviwerCrad from './InterviwerCard';
 
+
+const vapi = new Vapi("89d9dcde-d231-405e-888b-634fb4c6ed91");
 interface Resume {
   fullName: string;
   email: string;
@@ -21,13 +23,13 @@ interface StoredData {
   feedback: string[];
   code: string;
   timestamp: number;
+  isCompleted?: boolean;
 }
-
-
 
 function VoiceAssistant() {
   const [storedData, setStoredData] = useState<StoredData | null>(null);
   const [isInterviewStarted, setIsInterviewStarted] = useState(false);
+  const [isInterviewEnded, setIsInterviewEnded] = useState(false);
   const [currentCode, setCurrentCode] = useState<string>('// Write your code here');
   const [selectedLanguage, setSelectedLanguage] = useState<string>('javascript');
   const [showWebcam, setShowWebcam] = useState(true);
@@ -49,7 +51,7 @@ function VoiceAssistant() {
     if (stored) {
       const parsedData: StoredData = JSON.parse(stored);
       setStoredData(parsedData);
-      setQuestions(parsedData.technicalQuestions.split('\n\n')); // Assuming questions are separated by double newlines
+      setQuestions(parsedData.technicalQuestions.split('\n\n'));
       setFeedback(parsedData.feedback || []);
       setCurrentCode(parsedData.code || '// Write your code here');
     }
@@ -76,10 +78,9 @@ function VoiceAssistant() {
       return;
     }
   
-    const vapi = new Vapi("89d9dcde-d231-405e-888b-634fb4c6ed91");
+    
     
     try {
-      // Format questions for better AI consumption
       const formattedQuestions = questions.map((q, index) => `Q${index + 1}: ${q}`).join('\n');
       
       vapi.start("826b814e-4b2c-4707-ab5f-c8c73a3bde28", {
@@ -96,7 +97,7 @@ function VoiceAssistant() {
         endCallPhrases: ["thank you", "end up the interview", "stop"],
         endCallMessage: "Thank you for your time! I will now process your responses and provide feedback.",
         silenceTimeoutSeconds: 30,
-        maxDurationSeconds: 1800, // 30 minutes
+        maxDurationSeconds: 1800,
         backgroundSound: "off",
         
         messagePlan: {
@@ -124,6 +125,49 @@ function VoiceAssistant() {
     }
   };
 
+  const handleEndInterview = async () => {
+    if (!isInterviewStarted) return;
+    vapi.stop();
+    const confirmEnd = window.confirm(
+      "Are you sure you want to end the interview? This action cannot be undone."
+    );
+    
+    if (!confirmEnd) return;
+    
+    try {
+      const interviewSummary = {
+        duration: Date.now() - storedData?.timestamp!,
+        questionsCompleted: currentQuestionIndex + 1,
+        totalQuestions: questions.length,
+        code: currentCode,
+        feedback: feedback
+      };
+      
+      
+      updateLocalStorage({
+        ...interviewSummary,
+        isCompleted: true
+      });
+      
+      setIsInterviewStarted(false);
+      setIsInterviewEnded(true);
+      
+      alert(`
+        Interview completed successfully!
+        
+        Summary:
+        - Duration: ${Math.round(interviewSummary.duration / 60000)} minutes
+        - Questions Completed: ${interviewSummary.questionsCompleted}/${interviewSummary.totalQuestions}
+        
+        Your responses have been saved.
+      `);
+      
+    } catch (error) {
+      console.error("Error ending interview:", error);
+      alert("Failed to end interview. Please try again.");
+    }
+  };
+
   const handleNextQuestion = () => {
     if (currentQuestionIndex < questions.length - 1) {
       setCurrentQuestionIndex(currentQuestionIndex + 1);
@@ -141,25 +185,48 @@ function VoiceAssistant() {
   return (
     <div className="h-screen flex flex-col">
       {/* Top Bar */}
-      <div className=" shadow-sm p-2 flex items-center">
-        {!isInterviewStarted ? (
+      <div className="shadow-sm p-2 flex items-center justify-between">
+        <div className="flex items-center space-x-4">
+          {!isInterviewStarted ? (
+            <button
+              onClick={startInterview}
+              className="bg-blue-500 text-white py-2 px-6 rounded-lg hover:bg-blue-600 transition-colors"
+            >
+              Start Interview
+            </button>
+          ) : (
+            <div className="text-green-600 font-semibold px-4 flex items-center space-x-2">
+              <span>Interview in Progress</span>
+              <span className="relative flex h-3 w-3">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
+              </span>
+            </div>
+          )}
+        </div>
+        
+        {isInterviewStarted && (
           <button
-            onClick={startInterview}
-            className="bg-blue-500 text-white py-2 px-6 rounded-lg hover:bg-blue-600 transition-colors"
+            onClick={handleEndInterview}
+            className="bg-red-500 text-white py-2 px-6 rounded-lg hover:bg-red-600 transition-colors flex items-center space-x-2"
           >
-            Start Interview
+            <svg 
+              xmlns="http://www.w3.org/2000/svg" 
+              className="h-5 w-5" 
+              viewBox="0 0 20 20" 
+              fill="currentColor"
+            >
+              <path 
+                fillRule="evenodd" 
+                d="M10 18a8 8 0 100-16 8 8 0 000 16zM8 7a1 1 0 00-1 1v4a1 1 0 002 0V8a1 1 0 00-1-1zm4 0a1 1 0 00-1 1v4a1 1 0 002 0V8a1 1 0 00-1-1z" 
+                clipRule="evenodd" 
+              />
+            </svg>
+            <span>End Interview</span>
           </button>
-        ) : (
-          <div className="text-green-600 font-semibold px-4 flex items-center space-x-2">
-            <span>Interview in Progress</span>
-            <span className="relative flex h-3 w-3">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
-            </span>
-          </div>
         )}
       </div>
-  
+
       {/* Main Content Area */}
       <div className="flex-1 flex">
         {/* Left Side - Questions and IDE */}
@@ -181,13 +248,13 @@ function VoiceAssistant() {
               </ReactMarkdown>
             </div>
           </div>
-  
+
           {/* IDE */}
           <div className="flex-1">
             <MultiLangIDE />
           </div>
         </div>
-  
+
         {/* Right Side - Profile Cards */}
         <div className="w-72 bg-gray-50 border-l">
           {/* User Camera Card */}
@@ -226,7 +293,7 @@ function VoiceAssistant() {
               </div>
             </div>
           </div>
-  
+
           {/* Vapi Assistant Card */}
           <div className="p-2">
             <div className="bg-white rounded-lg shadow-sm p-3">
@@ -257,7 +324,7 @@ function VoiceAssistant() {
           </div>
         </div>
       </div>
-  
+
       {/* Status Bar */}
       <div className="bg-white shadow-sm p-2 flex items-center space-x-4 text-sm">
         <div className="flex items-center space-x-2">

@@ -9,11 +9,15 @@ interface Resume {
   education: string;
   skills: string[];
 }
-
+interface Question{
+  Question: string;
+  TestCase: string;
+  Output: string;
+}
 interface StoredData {
   resume: Resume;
   startingText: string;
-  technicalQuestions: string;
+  technicalQuestions: Question[];
   timestamp: number;
 }
 
@@ -63,7 +67,13 @@ const getDSAQuestions = async (skills: string[]) => {
     // });
 
     // return result.text || '';
-    return 'Write the BFS algo for a graph'
+    // return {Question: 'Sort the array using the quick sort algorithm', TestCase: 'Input: [3, 1, 4, 1, 5]', Output: '[1, 1, 3, 4, 5]'};
+    return [
+      { Question: 'Sort the array using the quick sort algorithm', TestCase: 'Input: [3, 1, 4, 1, 5]', Output: '[1, 1, 3, 4, 5]' },
+      { Question: 'Find the longest common prefix in an array of strings', TestCase: 'Input: ["flower", "flow", "flight"]', Output: '"fl"' },
+      { Question: 'Implement a binary search algorithm', TestCase: 'Input: [1, 2, 3, 4, 5], Target: 3', Output: 'Index 2' },
+      // Add more questions as needed
+    ];
   } catch (error) {
     console.error('Error generating DSA questions:', error);
     throw error;
@@ -93,7 +103,7 @@ export default function ResumeUpload({ onResumeSubmit }: ResumeUploadProps) {
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const updateStorage = (startingText: string, questions: string) => {
+  const updateStorage = (startingText: string, questions: Question[]) => {
     const storedData: StoredData = {
       resume: formData,
       startingText,

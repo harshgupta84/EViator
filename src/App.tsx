@@ -12,7 +12,7 @@ function App() {
   const navigate = useNavigate();
 
   const handleResumeSubmit = (resume: Resume) => {
-    // You can store resume or do something here
+    
     navigate("/interview");
   };
 

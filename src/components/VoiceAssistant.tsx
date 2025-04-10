@@ -1,13 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import Vapi from '@vapi-ai/web';
-import Editor from '@monaco-editor/react';
 import Webcam from 'react-webcam';
-import ReactMarkdown from 'react-markdown';
 import MultiLangIDE from './MultiLangIDE';
 import InterviwerCrad from './InterviwerCard';
 import { useNavigate } from 'react-router-dom';
+import QuestionDisplay from './QuestionDisplay';
 
 const vapi = new Vapi("89d9dcde-d231-405e-888b-634fb4c6ed91");
+
 interface Resume {
   fullName: string;
   email: string;
@@ -16,10 +16,16 @@ interface Resume {
   skills: string[];
 }
 
+interface Question {
+  Question: string;
+  TestCase: string;
+  Output: string;
+}
+
 interface StoredData {
   resume: Resume;
   startingText: string;
-  technicalQuestions: string;
+  technicalQuestions: Question[];
   feedback: string[];
   code: string;
   timestamp: number;
@@ -27,7 +33,6 @@ interface StoredData {
 }
 
 function VoiceAssistant() {
-
   const [storedData, setStoredData] = useState<StoredData | null>(null);
   const [isInterviewStarted, setIsInterviewStarted] = useState(false);
   const [isInterviewEnded, setIsInterviewEnded] = useState(false);
@@ -35,7 +40,7 @@ function VoiceAssistant() {
   const [selectedLanguage, setSelectedLanguage] = useState<string>('javascript');
   const [showWebcam, setShowWebcam] = useState(true);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState<number>(0);
-  const [questions, setQuestions] = useState<string[]>([]);
+  const [questions, setQuestions] = useState<Question[]>([]);
   const [feedback, setFeedback] = useState<string[]>([]);
   const [isVapiSpeaking, setIsVapiSpeaking] = useState(false);
   const navigate = useNavigate();
@@ -52,7 +57,7 @@ function VoiceAssistant() {
     if (stored) {
       const parsedData: StoredData = JSON.parse(stored);
       setStoredData(parsedData);
-      setQuestions(parsedData.technicalQuestions.split('\n\n'));
+      setQuestions(parsedData.technicalQuestions);
       setFeedback(parsedData.feedback || []);
       setCurrentCode(parsedData.code || '// Write your code here');
     }
@@ -79,10 +84,8 @@ function VoiceAssistant() {
       return;
     }
   
-    
-    
     try {
-      const formattedQuestions = questions.map((q, index) => `Q${index + 1}: ${q}`).join('\n');
+      const formattedQuestions = questions.map((q, index) => `Q${index + 1}: ${q.Question}`).join('\n');
       
       vapi.start("826b814e-4b2c-4707-ab5f-c8c73a3bde28", {
         variableValues:{
@@ -137,13 +140,12 @@ function VoiceAssistant() {
     
     try {
       const interviewSummary = {
-        duration: Date.now() - storedData?.timestamp!,
+        duration: Date.now() - (storedData?.timestamp || Date.now()),
         questionsCompleted: currentQuestionIndex + 1,
         totalQuestions: questions.length,
         code: currentCode,
         feedback: feedback
       };
-      
       
       updateLocalStorage({
         ...interviewSummary,
@@ -182,6 +184,7 @@ function VoiceAssistant() {
     setCurrentCode(newCode);
     updateLocalStorage({ code: newCode });
   };
+
   const handleViewReport = () => {
     navigate('/report');
   };
@@ -236,22 +239,12 @@ function VoiceAssistant() {
         {/* Left Side - Questions and IDE */}
         <div className="flex-1 flex flex-col">
           {/* Question Display */}
-          <div className="bg-white shadow-sm">
-            <div className="flex justify-between items-center p-2">
-              <h3 className="font-semibold">Current Question:</h3>
-              <button
-                onClick={handleNextQuestion}
-                className="bg-blue-500 text-white py-1.5 px-4 rounded text-sm hover:bg-blue-600"
-              >
-                Next Question
-              </button>
-            </div>
-            <div className="p-3">
-              <ReactMarkdown>
-                {questions[currentQuestionIndex] || "No questions available."}
-              </ReactMarkdown>
-            </div>
-          </div>
+          <QuestionDisplay
+            question={questions[currentQuestionIndex] || null}
+            currentIndex={currentQuestionIndex}
+            totalQuestions={questions.length}
+            onNextQuestion={handleNextQuestion}
+          />
 
           {/* IDE */}
           <div className="flex-1">
@@ -305,7 +298,7 @@ function VoiceAssistant() {
                 <div className="aspect-video rounded-lg mb-2 flex items-center justify-center bg-gray-100">
                   <div className="relative">
                     <InterviwerCrad
-                      name="Vapi Assistant" 
+                      name="AI Interviwer" 
                       isActive={isInterviewStarted}
                     />
                     {isInterviewStarted && (
@@ -317,7 +310,7 @@ function VoiceAssistant() {
                   </div>
                 </div>
                 <div className="text-center">
-                  <div className="font-medium">Vapi Assistant</div>
+                  <div className="font-medium">AI Interviwer</div>
                   <div className="text-sm text-gray-500">Interviewer</div>
                   <div className="text-sm text-green-500 mt-2">
                     {isInterviewStarted ? 'Active' : 'Inactive'}
@@ -351,13 +344,13 @@ function VoiceAssistant() {
         )}
       </div>
       {(isInterviewEnded || storedData?.isCompleted) && (
-    <button
-      onClick={handleViewReport}
-      className="bg-green-500 text-white py-2 px-6 rounded-lg hover:bg-green-600 transition-colors flex items-center space-x-2"
-    >
-      <span>View Report</span>
-    </button>
-  )}
+        <button
+          onClick={handleViewReport}
+          className="bg-green-500 text-white py-2 px-6 rounded-lg hover:bg-green-600 transition-colors flex items-center space-x-2"
+        >
+          <span>View Report</span>
+        </button>
+      )}
     </div>
   );
 }

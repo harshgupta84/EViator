@@ -194,14 +194,7 @@ function VoiceAssistant() {
       {/* Top Bar */}
       <div className="shadow-sm p-2 flex items-center justify-between">
         <div className="flex items-center space-x-4">
-          {!isInterviewStarted ? (
-            <button
-              onClick={startInterview}
-              className="bg-blue-500 text-white py-2 px-6 rounded-lg hover:bg-blue-600 transition-colors"
-            >
-              Start Interview
-            </button>
-          ) : (
+          {isInterviewStarted && (
             <div className="text-green-600 font-semibold px-4 flex items-center space-x-2">
               <span>Interview in Progress</span>
               <span className="relative flex h-3 w-3">
@@ -236,21 +229,75 @@ function VoiceAssistant() {
 
       {/* Main Content Area */}
       <div className="flex-1 flex">
-        {/* Left Side - Questions and IDE */}
-        <div className="flex-1 flex flex-col">
-          {/* Question Display */}
-          <QuestionDisplay
-            question={questions[currentQuestionIndex] || null}
-            currentIndex={currentQuestionIndex}
-            totalQuestions={questions.length}
-            onNextQuestion={handleNextQuestion}
-          />
-
-          {/* IDE */}
-          <div className="flex-1">
-            <MultiLangIDE />
-          </div>
-        </div>
+  {!isInterviewStarted ? (
+    // Start Interview Welcome Screen
+    <div className="flex-1 flex items-center justify-center bg-gray-50">
+      <div className="text-center max-w-2xl px-4">
+        <h2 className="text-3xl font-bold text-gray-800 mb-4">
+          Welcome to Your Technical Interview
+        </h2>
+        <p className="text-gray-600 mb-8">
+          {storedData ? (
+            `Hello ${storedData.resume.fullName}, we'll be focusing on your experience with ${storedData.resume.skills.join(', ')}. Click start when you're ready.`
+          ) : (
+            "Please submit your resume and generate technical questions to begin the interview."
+          )}
+        </p>
+        <button
+          onClick={startInterview}
+          disabled={!storedData}
+          className={`
+            px-8 py-4 rounded-lg text-white text-lg font-semibold
+            transition-all duration-300 flex items-center justify-center mx-auto space-x-3
+            ${storedData 
+              ? 'bg-blue-500 hover:bg-blue-600 hover:shadow-lg' 
+              : 'bg-gray-400 cursor-not-allowed'
+            }
+          `}
+        >
+          <svg 
+            xmlns="http://www.w3.org/2000/svg" 
+            className="h-6 w-6" 
+            fill="none" 
+            viewBox="0 0 24 24" 
+            stroke="currentColor"
+          >
+            <path 
+              strokeLinecap="round" 
+              strokeLinejoin="round" 
+              strokeWidth={2} 
+              d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" 
+            />
+            <path 
+              strokeLinecap="round" 
+              strokeLinejoin="round" 
+              strokeWidth={2} 
+              d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" 
+            />
+          </svg>
+          <span>Start Interview</span>
+        </button>
+        {!storedData && (
+          <p className="text-red-500 mt-4">
+            Please complete your profile setup first
+          </p>
+        )}
+      </div>
+    </div>
+  ) : (
+    // Original Questions and IDE content
+    <div className="flex-1 flex flex-col">
+      <QuestionDisplay
+        question={questions[currentQuestionIndex] || null}
+        currentIndex={currentQuestionIndex}
+        totalQuestions={questions.length}
+        onNextQuestion={handleNextQuestion}
+      />
+      <div className="flex-1">
+        <MultiLangIDE />
+      </div>
+    </div>
+  )}
 
         {/* Right Side - Profile Cards */}
         <div className="w-72 bg-gray-50 border-l">

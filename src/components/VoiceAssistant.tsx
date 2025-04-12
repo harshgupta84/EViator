@@ -96,11 +96,10 @@ function VoiceAssistant() {
           candidateExperience: storedData.resume.experience,
           candidateEducation: storedData.resume.education,
           candidateSkills: storedData.resume.skills.join(', '),
-          candidateCode: storedData.code,
+          candidateCode: currentCode,
           technicalQuestions: formattedQuestions,
         },
         firstMessage: generateInitialMessage(storedData),
-        endCallPhrases: ["thank you", "end up the interview", "stop"],
         endCallMessage: "Thank you for your time! I will now process your responses and provide feedback.",
         silenceTimeoutSeconds: 30,
         maxDurationSeconds: 1800,
@@ -109,17 +108,6 @@ function VoiceAssistant() {
         messagePlan: {
           idleTimeoutSeconds: 10,
           silenceTimeoutMessage: "Are you still there? Should we continue with the interview?"
-        },
-        stopSpeakingPlan: {
-          numWords: 3,
-          voiceSeconds: 0.2,
-          backoffSeconds: 1,
-          acknowledgementPhrases: [
-            "i understand", "i see", "i got it", "okay", "got it", "understood"
-          ],
-          interruptionPhrases: [
-            "stop", "wait", "hold on", "let me think"
-          ]
         },
       });
   

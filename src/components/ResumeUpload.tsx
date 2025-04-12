@@ -44,41 +44,92 @@ const getStartingText = async (skills: string[]) => {
 
 const getDSAQuestions = async (skills: string[]) => {
   try {
-    // const genAI = new GoogleGenAI({ apiKey: "AIzaSyBIAl7cet4NRyO8s1lyvwrxsoVxHHwMaoI" });
+    const genAI = new GoogleGenAI({ apiKey: "AIzaSyCDrmK97AyjO07DqBEFw9T9FDwk5J5lyT8" });
+   
+    const prompt = `As a technical interviewer, generate 4 programming questions based on the candidate's skills: ${skills.join(', ')}. 
 
-    // const prompt = `Based on the candidate's skills: ${skills.join(', ')}, generate three DSA (Data Structures and Algorithms) questions. Each question should include a test case. Do not provide solutions or additional details. Format the response as follows:
+    Format each question exactly as follows:
 
-    // DSA QUESTIONS:
-    // 1. Easy:
-    //    Problem: [problem statement]
-    //    Test Case: [example input/output]
+    {
+      "questions": [
+        {
+          "Question": "<clear problem statement>",
+          "TestCase": "<specific input format and example>",
+          "Output": "<expected output for the test case>"
+        }
+      ]
+    }
 
-    // 2. Medium:
-    //    Problem: [problem statement]
-    //    Test Case: [example input/output]
+    Requirements for questions:
+    1. First question should be Easy (array/string manipulation)
+    2. Second question should be Medium (data structures: trees/linked lists/stacks)
+    3. Third question should be Medium-Hard (algorithms: dynamic programming/graphs)
+    4. Fourth question should be System Design or Advanced Concept based on candidate's skills
 
-    // 3. Hard:
-    //    Problem: [problem statement]
-    //    Test Case: [example input/output]`;
+    Guidelines:
+    - Questions should be clear and concise
+    - Test cases should be specific with exact input format
+    - Expected output should match the test case
+    - Questions should progressively increase in difficulty
+    - Include relevant skills from: ${skills.join(', ')}
+    - Each question should test different aspects of programming
 
-    // const result = await genAI.models.generateContent({
-    //   model: "gemini-2.5-pro-exp-03-25",
-    //   contents: prompt,
-    // });
+    Return only valid JSON with 4 questions following this exact structure.`;
 
-    // return result.text || '';
-    // return {Question: 'Sort the array using the quick sort algorithm', TestCase: 'Input: [3, 1, 4, 1, 5]', Output: '[1, 1, 3, 4, 5]'};
-    return [
-      { Question: 'Sort the array using the quick sort algorithm', TestCase: 'Input: [3, 1, 4, 1, 5]', Output: '[1, 1, 3, 4, 5]' },
-      { Question: 'Find the longest common prefix in an array of strings', TestCase: 'Input: ["flower", "flow", "flight"]', Output: '"fl"' },
-      { Question: 'Implement a binary search algorithm', TestCase: 'Input: [1, 2, 3, 4, 5], Target: 3', Output: 'Index 2' },
-      // Add more questions as needed
-    ];
+    const result = await genAI.models.generateContent({
+      model: "gemini-2.5-pro-exp-03-25",
+      contents: prompt,
+    });
+
+    const text = result.text || '';
+    
+
+    try {
+      // Parse the JSON response
+      const parsedResponse = JSON.parse(text);
+      
+      // Check if questions array exists and return it
+      if (parsedResponse.questions && Array.isArray(parsedResponse.questions)) {
+        return parsedResponse.questions;
+      }
+
+      // If parsing succeeds but format is wrong, return default questions
+      return defaultQuestions;
+    } catch (parseError) {
+      console.error('Error parsing questions:', parseError);
+      return defaultQuestions;
+    }
   } catch (error) {
     console.error('Error generating DSA questions:', error);
-    throw error;
+    // Return default questions if API call fails
+    return defaultQuestions;
   }
 };
+
+// Default questions to use as fallback
+const defaultQuestions: Question[] = [
+  {
+    Question: 'Sort the array using the quick sort algorithm',
+    TestCase: 'Input: [3, 1, 4, 1, 5]',
+    Output: '[1, 1, 3, 4, 5]'
+  },
+  {
+    Question: 'Find the longest common prefix in an array of strings',
+    TestCase: 'Input: ["flower", "flow", "flight"]',
+    Output: '"fl"'
+  },
+  {
+    Question: 'Implement a binary search algorithm',
+    TestCase: 'Input: [1, 2, 3, 4, 5], Target: 3',
+    Output: 'Index 2'
+  },
+  {
+    Question: 'Design a rate limiter for an API',
+    TestCase: 'Input: maxRequests = 3, timeWindow = 1s',
+    Output: 'Boolean response indicating if request is allowed'
+  }
+];
+
 
 interface ResumeUploadProps {
   onResumeSubmit: (resume: Resume) => void;

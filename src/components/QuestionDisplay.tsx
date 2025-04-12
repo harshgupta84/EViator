@@ -1,5 +1,7 @@
 import React from 'react';
 import ReactMarkdown from 'react-markdown';
+import { GoogleGenAI } from '@google/genai';
+
 
 interface Question {
   Question: string;
@@ -21,7 +23,24 @@ const QuestionDisplay: React.FC<QuestionDisplayProps> = ({
   onNextQuestion,
 }) => {
   const isLastQuestion = currentIndex >= totalQuestions - 1;
-
+  const getInterviewFeedback = async (skills: string[]) => {
+    try {
+      const genAI = new GoogleGenAI({ apiKey: "AIzaSyC0tdEPQrEy5Is0iG9DnO1BVpAWIg-5dx0" });
+  
+      const prompt = `Generate a starting text for an interview based on the candidate's skills: ${skills.join(', ')}.`;
+  
+      const result = await genAI.models.generateContent({
+        model: "gemini-2.5-pro-exp-03-25",
+        contents: prompt,
+      });
+  
+      return result.text || '';
+      
+    } catch (error) {
+      console.error('Error generating starting text:', error);
+      throw error;
+    }
+  };
   return (
     <div className="bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden">
       {/* Header */}

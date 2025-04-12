@@ -1,70 +1,56 @@
 // components/InterviewReport.tsx
+import React, { useEffect, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
-import { FileText, Video, ArrowLeft } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
-interface CodeSubmission {
-  language: string;
-  code: string;
-  questionIndex: number;
-  timestamp: number;
+interface Resume {
+  fullName: string;
+  email: string;
+  experience: string;
+  education: string;
+  skills: string[];
 }
 
-interface Interview {
-  candidateName: string;
-  status: 'completed' | 'in-progress';
-  questions: string[];
-  codeSubmissions: CodeSubmission[];
-  audioUrl?: string;
-  videoUrl?: string;
-  resume: {
-    fullName: string;
-    email: string;
-    experience: string;
-    education: string;
-    skills: string[];
-  };
+interface Question {
+  Question: string;
+  TestCase: string;
+  Output: string;
+}
+
+interface StoredData {
+  resume: Resume;
+  technicalQuestions: Question[];
   feedback: string[];
-  totalDuration: number;
+  code: string;
+  timestamp: number;
+  isCompleted?: boolean;
+  conversation?: string[];
+  duration?: number;
 }
 
-interface Props {
-  interview: Interview;
-}
-
-export function InterviewReport({ interview }: Props) {
+export function InterviewReport() {
+  const [interviewData, setInterviewData] = useState<StoredData | null>(null);
   const navigate = useNavigate();
 
-  const generateReport = () => {
-    return `
-# Interview Report: ${interview.resume.fullName}
+  useEffect(() => {
+    const stored = localStorage.getItem('interview_data');
+    if (stored) {
+      setInterviewData(JSON.parse(stored));
+    }
+  }, []);
 
-## Overview
-- Status: ${interview.status}
-- Questions Answered: ${interview.questions.length}
-- Code Submissions: ${interview.codeSubmissions.length}
-- Duration: ${Math.round(interview.totalDuration / 60000)} minutes
+  if (!interviewData) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <p>No interview data found.</p>
+      </div>
+    );
+  }
 
-## Technical Assessment
-${interview.questions.map((question, index) => `
-### Question ${index + 1}
-${question}
-
-${interview.codeSubmissions[index] ? `Code Submission:
-\`\`\`${interview.codeSubmissions[index].language}
-${interview.codeSubmissions[index].code}
-\`\`\`
-` : 'No code submitted'}
-`).join('\n')}
-
-## Feedback
-${interview.feedback.map((f, i) => `${i + 1}. ${f}`).join('\n')}
-
-## Recordings
-${interview.audioUrl ? '- Audio recording available for review' : '- No audio recording available'}
-${interview.videoUrl ? '- Video recording available for review' : '- No video recording available'}
-    `;
-  };
+  const duration = interviewData.duration 
+    ? Math.round(interviewData.duration / 60000) 
+    : 0;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -79,32 +65,32 @@ ${interview.videoUrl ? '- Video recording available for review' : '- No video re
               >
                 <ArrowLeft className="w-6 h-6" />
               </button>
-              <h1 className="text-2xl font-bold text-gray-900">Interview Report</h1>
+              <h1 className="text-2xl font-bold text-gray-900">Technical Interview Report</h1>
             </div>
           </div>
         </div>
       </div>
 
       <div className="max-w-4xl mx-auto p-6">
-        {/* Candidate Info Card */}
+        {/* Candidate Info */}
         <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
           <h2 className="text-xl font-bold text-gray-800 mb-4">Candidate Information</h2>
           <div className="grid grid-cols-2 gap-4">
             <div>
               <p className="text-gray-600">Name</p>
-              <p className="font-medium">{interview.resume.fullName}</p>
+              <p className="font-medium">{interviewData.resume.fullName}</p>
             </div>
             <div>
               <p className="text-gray-600">Email</p>
-              <p className="font-medium">{interview.resume.email}</p>
+              <p className="font-medium">{interviewData.resume.email}</p>
             </div>
             <div>
               <p className="text-gray-600">Experience</p>
-              <p className="font-medium">{interview.resume.experience}</p>
+              <p className="font-medium">{interviewData.resume.experience}</p>
             </div>
             <div>
               <p className="text-gray-600">Skills</p>
-              <p className="font-medium">{interview.resume.skills.join(', ')}</p>
+              <p className="font-medium">{interviewData.resume.skills.join(', ')}</p>
             </div>
           </div>
         </div>
@@ -114,69 +100,81 @@ ${interview.videoUrl ? '- Video recording available for review' : '- No video re
           <div className="bg-white rounded-lg shadow-lg p-6">
             <div className="text-sm text-gray-600">Questions</div>
             <div className="text-2xl font-bold text-blue-600">
-              {interview.questions.length}
+              {interviewData.technicalQuestions.length}
             </div>
           </div>
           <div className="bg-white rounded-lg shadow-lg p-6">
             <div className="text-sm text-gray-600">Duration</div>
             <div className="text-2xl font-bold text-green-600">
-              {Math.round(interview.totalDuration / 60000)}min
+              {duration}min
             </div>
           </div>
           <div className="bg-white rounded-lg shadow-lg p-6">
-            <div className="text-sm text-gray-600">Code Submissions</div>
+            <div className="text-sm text-gray-600">Status</div>
             <div className="text-2xl font-bold text-purple-600">
-              {interview.codeSubmissions.length}
+              {interviewData.isCompleted ? 'Completed' : 'In Progress'}
             </div>
           </div>
         </div>
 
-        {/* Main Report Content */}
-        <div className="bg-white rounded-lg shadow-lg p-6 prose max-w-none">
-          <ReactMarkdown>{generateReport()}</ReactMarkdown>
-
-          {/* Recordings Section */}
-          <div className="mt-6 space-y-4 not-prose">
-            {interview.audioUrl && (
-              <div>
-                <h3 className="text-lg font-medium mb-2">Audio Recording</h3>
-                <audio controls src={interview.audioUrl} className="w-full" />
+        {/* Technical Questions and Answers */}
+        <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
+          <h2 className="text-xl font-bold text-gray-800 mb-4">Technical Questions</h2>
+          {interviewData.technicalQuestions.map((q, index) => (
+            <div key={index} className="mb-6 last:mb-0">
+              <h3 className="font-medium text-lg mb-2">Question {index + 1}</h3>
+              <p className="text-gray-700 mb-2">{q.Question}</p>
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <h4 className="font-medium mb-2">Test Case:</h4>
+                <pre className="bg-gray-100 p-2 rounded">{q.TestCase}</pre>
+                <h4 className="font-medium mt-4 mb-2">Expected Output:</h4>
+                <pre className="bg-gray-100 p-2 rounded">{q.Output}</pre>
               </div>
-            )}
+            </div>
+          ))}
+        </div>
 
-            {interview.videoUrl && (
-              <div>
-                <h3 className="text-lg font-medium mb-2">Video Recording</h3>
-                <div className="relative">
-                  <img
-                    src={interview.videoUrl}
-                    alt="Interview video screenshot"
-                    className="w-full rounded-lg shadow"
-                  />
-                  <Video className="absolute top-4 right-4 w-8 h-8 text-white opacity-75" />
+        {/* Code Submission */}
+        <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
+          <h2 className="text-xl font-bold text-gray-800 mb-4">Code Submission</h2>
+          <pre className="bg-gray-100 p-4 rounded-lg overflow-x-auto">
+            <code>{interviewData.code}</code>
+          </pre>
+        </div>
+
+        {/* Feedback */}
+        {interviewData.feedback && interviewData.feedback.length > 0 && (
+          <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
+            <h2 className="text-xl font-bold text-gray-800 mb-4">Feedback</h2>
+            <ul className="space-y-2">
+              {interviewData.feedback.map((feedback, index) => (
+                <li key={index} className="flex items-start">
+                  <span className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 mr-2">
+                    {index + 1}
+                  </span>
+                  <span className="text-gray-700">{feedback}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        {/* Conversation History */}
+        {interviewData.conversation && interviewData.conversation.length > 0 && (
+          <div className="bg-white rounded-lg shadow-lg p-6">
+            <h2 className="text-xl font-bold text-gray-800 mb-4">Interview Conversation</h2>
+            <div className="space-y-2">
+              {interviewData.conversation.map((message, index) => (
+                <div key={index} className="p-2 rounded bg-gray-50">
+                  <p className="text-gray-700">{message}</p>
                 </div>
-              </div>
-            )}
-          </div>
-
-          {/* Feedback Section */}
-          {interview.feedback.length > 0 && (
-            <div className="mt-6 not-prose">
-              <h3 className="text-lg font-medium mb-2">Feedback Points</h3>
-              <ul className="space-y-2">
-                {interview.feedback.map((item, index) => (
-                  <li key={index} className="flex items-start">
-                    <span className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 mr-2">
-                      {index + 1}
-                    </span>
-                    <span className="text-gray-700">{item}</span>
-                  </li>
-                ))}
-              </ul>
+              ))}
             </div>
-          )}
-        </div>
+          </div>
+        )}
       </div>
     </div>
   );
 }
+
+export default InterviewReport;

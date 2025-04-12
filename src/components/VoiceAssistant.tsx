@@ -30,6 +30,7 @@ interface StoredData {
   code: string;
   timestamp: number;
   isCompleted?: boolean;
+  conversation?: string[];
 }
 
 function VoiceAssistant() {
@@ -43,6 +44,7 @@ function VoiceAssistant() {
   const [questions, setQuestions] = useState<Question[]>([]);
   const [feedback, setFeedback] = useState<string[]>([]);
   const [isVapiSpeaking, setIsVapiSpeaking] = useState(false);
+  const [conversation,setConversation] = useState<string[]>([]);
   const navigate = useNavigate();
   const supportedLanguages = [
     { label: 'JavaScript', value: 'javascript' },
@@ -144,7 +146,9 @@ function VoiceAssistant() {
         questionsCompleted: currentQuestionIndex + 1,
         totalQuestions: questions.length,
         code: currentCode,
-        feedback: feedback
+        feedback: feedback,
+        conversation: conversation,
+
       };
       
       updateLocalStorage({
@@ -188,6 +192,9 @@ function VoiceAssistant() {
   const handleViewReport = () => {
     navigate('/report');
   };
+  vapi.on('message', (message: string) => {
+    setConversation((prev) => [...prev, message]);
+  });
 
   return (
     <div className="h-screen flex flex-col">

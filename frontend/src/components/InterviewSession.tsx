@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useReactMediaRecorder } from 'react-media-recorder';
 import Editor from '@monaco-editor/react';
 import Webcam from 'react-webcam';
-import { Mic, MicOff, Play, Square, Video, VideoOff } from 'lucide-react';
+import { Mic, MicOff, Play, Square, AlertCircle, Camera } from 'lucide-react';
 import type { Interview, InterviewQuestion, ProgrammingLanguage } from '../types';
 
 interface Props {
@@ -23,31 +23,68 @@ export function InterviewSession({ interview, onComplete }: Props) {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [code, setCode] = useState('');
   const [selectedLanguage, setSelectedLanguage] = useState<ProgrammingLanguage>(PROGRAMMING_LANGUAGES[0]);
-  const [isVideoEnabled, setIsVideoEnabled] = useState(true);
   const webcamRef = useRef<Webcam>(null);
+  const [cameraError, setCameraError] = useState(false);
+  const [cameraActive, setCameraActive] = useState(false);
   
   const { status: audioStatus, startRecording: startAudioRecording, stopRecording: stopAudioRecording, mediaBlobUrl: audioBlobUrl } = useReactMediaRecorder({
     audio: true,
     onStop: (audioUrl) => {
-      const videoUrl = isVideoEnabled ? webcamRef.current?.getScreenshot() : undefined;
-      onComplete({
-        ...interview,
-        audioUrl: audioUrl,
-        videoUrl: videoUrl,
-        status: 'completed'
-      });
+      if (!cameraError && cameraActive) {
+        const screenshot = webcamRef.current?.getScreenshot();
+        const videoUrl = screenshot || undefined;
+        onComplete({
+          ...interview,
+          audioUrl: audioUrl,
+          videoUrl: videoUrl,
+          status: 'completed'
+        });
+      } else {
+        alert('Camera must be active to complete the interview. Please enable your camera.');
+      }
     }
   });
 
   const currentQuestion = interview.questions[currentQuestionIndex];
 
   useEffect(() => {
+    // Check if camera is accessible when component mounts
+    const checkCameraAccess = async () => {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        // Clean up the stream after checking
+        stream.getTracks().forEach(track => track.stop());
+        setCameraError(false);
+      } catch (err) {
+        console.error('Camera access denied or not available:', err);
+        setCameraError(true);
+      }
+    };
+    
+    checkCameraAccess();
+    
     if (currentQuestionIndex === 0) {
       startAudioRecording();
     }
   }, []);
 
+  const handleCameraError = () => {
+    setCameraError(true);
+    setCameraActive(false);
+  };
+  
+  const handleUserMedia = () => {
+    setCameraError(false);
+    setCameraActive(true);
+  };
+
   const handleNext = () => {
+    // Block progression if camera isn't available or active
+    if (cameraError || !cameraActive) {
+      alert('Camera must be active to proceed. Please enable your camera.');
+      return;
+    }
+    
     if (currentQuestion.type === 'coding') {
       interview.codeSubmissions.push({
         questionId: currentQuestion.id,
@@ -65,10 +102,6 @@ export function InterviewSession({ interview, onComplete }: Props) {
     }
   };
 
-  const toggleVideo = () => {
-    setIsVideoEnabled(!isVideoEnabled);
-  };
-
   return (
     <div className="max-w-4xl mx-auto p-6">
       <div className="mb-6 flex items-center justify-between">
@@ -76,17 +109,12 @@ export function InterviewSession({ interview, onComplete }: Props) {
           Interview with {interview.candidateName}
         </h2>
         <div className="flex items-center gap-4">
-          <button
-            onClick={toggleVideo}
-            className="p-2 rounded-full hover:bg-gray-100"
-            title={isVideoEnabled ? 'Disable video' : 'Enable video'}
-          >
-            {isVideoEnabled ? (
-              <Video className="w-6 h-6 text-green-600" />
-            ) : (
-              <VideoOff className="w-6 h-6 text-gray-400" />
-            )}
-          </button>
+          <div className="flex items-center gap-2">
+            <Camera className={`w-5 h-5 ${cameraActive ? 'text-green-600' : 'text-red-600 animate-pulse'}`} />
+            <span className={`text-sm ${cameraActive ? 'text-green-600' : 'text-red-600'}`}>
+              {cameraActive ? 'Camera On' : 'Camera Required'}
+            </span>
+          </div>
           {audioStatus === 'recording' ? (
             <Mic className="w-6 h-6 text-red-600 animate-pulse" />
           ) : (
@@ -98,15 +126,38 @@ export function InterviewSession({ interview, onComplete }: Props) {
         </div>
       </div>
 
-      {isVideoEnabled && (
-        <div className="mb-6">
-          <Webcam
-            ref={webcamRef}
-            audio={false}
-            className="w-full max-w-md mx-auto rounded-lg shadow-lg"
-          />
-        </div>
-      )}
+      <div className="mb-6">
+        {cameraError ? (
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-center space-x-3 mb-4">
+            <AlertCircle className="h-6 w-6 text-red-600" />
+            <div>
+              <h3 className="font-medium text-red-800">Camera Required</h3>
+              <p className="text-red-700">
+                This interview requires camera access. Please enable your camera and refresh the page to continue.
+              </p>
+            </div>
+          </div>
+        ) : !cameraActive ? (
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 flex items-center space-x-3 mb-4">
+            <AlertCircle className="h-6 w-6 text-yellow-600" />
+            <div>
+              <h3 className="font-medium text-yellow-800">Camera Inactive</h3>
+              <p className="text-yellow-700">
+                Your camera appears to be inactive. The camera must remain on throughout the entire interview. 
+                Please reactivate your camera to continue.
+              </p>
+            </div>
+          </div>
+        ) : null}
+        
+        <Webcam
+          ref={webcamRef}
+          audio={false}
+          className="w-full max-w-md mx-auto rounded-lg shadow-lg"
+          onUserMediaError={handleCameraError}
+          onUserMedia={handleUserMedia}
+        />
+      </div>
 
       <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
         <h3 className="text-lg font-medium text-gray-900 mb-4">
@@ -153,7 +204,12 @@ export function InterviewSession({ interview, onComplete }: Props) {
       <div className="flex justify-end gap-4">
         <button
           onClick={handleNext}
-          className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          disabled={cameraError || !cameraActive}
+          className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
+            cameraError || !cameraActive
+              ? 'bg-gray-400 text-gray-200 cursor-not-allowed' 
+              : 'bg-blue-600 text-white hover:bg-blue-700'
+          }`}
         >
           {currentQuestionIndex === interview.questions.length - 1 ? (
             <>

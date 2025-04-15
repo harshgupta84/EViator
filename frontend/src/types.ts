@@ -9,7 +9,7 @@ export interface Resume {
 export interface Interview {
   candidateName: string;
   status: 'completed' | 'in-progress';
-  questions: string[];
+  questions: InterviewQuestion[];
   codeSubmissions: CodeSubmission[];
   audioUrl?: string;
   videoUrl?: string;

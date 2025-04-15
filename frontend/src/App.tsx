@@ -30,7 +30,7 @@ function App() {
           element={<ResumeUpload onResumeSubmit={handleResumeSubmit} />}
         />
         <Route path="/interview" element={<VoiceAssistant />} />
-        <Route path="/report" element={<InterviewReport interview={interview}/>} />
+        <Route path="/report" element={<InterviewReport />} />
       </Routes>
     </>
   );

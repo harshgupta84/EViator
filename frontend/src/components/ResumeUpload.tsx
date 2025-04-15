@@ -1,6 +1,7 @@
 // InterviewSystem.tsx
 import React, { useState } from 'react';
 import { GoogleGenAI } from "@google/genai";
+import pdfToText from 'react-pdftotext';
 
 interface Resume {
   fullName: string;
@@ -153,6 +154,7 @@ export default function ResumeUpload({ onResumeSubmit }: ResumeUploadProps) {
 
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [pdfFile, setPdfFile] = useState<File | null>(null);
 
   const updateStorage = (startingText: string, questions: Question[]) => {
     const storedData: StoredData = {
@@ -190,6 +192,118 @@ export default function ResumeUpload({ onResumeSubmit }: ResumeUploadProps) {
     });
   };
 
+  const handlePdfUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setPdfFile(file);
+    setIsProcessing(true);
+    setError(null);
+
+    try {
+      const text = await pdfToText(file);
+      
+      // Extract information from the text
+      const extractedData: Partial<Resume> = {
+        skills: extractSkills(text),
+        experience: extractExperience(text),
+        education: extractEducation(text),
+        email: extractEmail(text),
+        fullName: extractName(text),
+      };
+
+      setFormData(prev => ({
+        ...prev,
+        ...extractedData
+      }));
+    } catch (err) {
+      setError('Failed to extract text from PDF. Please try again or fill the form manually.');
+      console.error('PDF parsing error:', err);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  // Helper functions for text extraction
+  function extractSkills(text: string): string[] {
+    // Look for skills section with better pattern matching
+    const skillsRegex = /(?:skills|technologies|technical skills|programming languages|expertise)(?::|.{0,10})(.*?)(?:\n\n|\n\s*\n|$)/is;
+    const match = text.match(skillsRegex);
+    if (match) {
+      // Clean up the skills text
+      const skillsText = match[1]
+        .replace(/[•\-*]/g, ',') // Replace bullet points with commas
+        .replace(/\s+/g, ' ') // Normalize whitespace
+        .trim();
+      
+      return skillsText
+        .split(/[,|]/)
+        .map(skill => skill.trim())
+        .filter(skill => skill.length > 0 && !skill.match(/^\d+$/)); // Filter out numbers
+    }
+    return [];
+  }
+
+  function extractExperience(text: string): string {
+    // Look for experience section with better boundaries
+    const experienceRegex = /(?:experience|work history|professional experience|employment history)(?::|.{0,10})(.*?)(?:\n\n|\n\s*\n|education|skills|$)/is;
+    const match = text.match(experienceRegex);
+    if (match) {
+      // Clean up the experience text
+      return match[1]
+        .replace(/\s+/g, ' ')
+        .replace(/\n/g, ' ')
+        .trim()
+        .substring(0, 500); // Limit to 500 characters
+    }
+    return '';
+  }
+
+  function extractEducation(text: string): string {
+    // Look for education section with better boundaries
+    const educationRegex = /(?:education|academic background|academic qualifications)(?::|.{0,10})(.*?)(?:\n\n|\n\s*\n|experience|skills|$)/is;
+    const match = text.match(educationRegex);
+    if (match) {
+      // Clean up the education text
+      return match[1]
+        .replace(/\s+/g, ' ')
+        .replace(/\n/g, ' ')
+        .trim()
+        .substring(0, 300); // Limit to 300 characters
+    }
+    return '';
+  }
+
+  function extractEmail(text: string): string {
+    // More precise email regex
+    const emailRegex = /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/;
+    const match = text.match(emailRegex);
+    return match ? match[0] : '';
+  }
+
+  function extractName(text: string): string {
+    // Look for name at the beginning of the document
+    const firstLines = text.split('\n').slice(0, 3); // Check first 3 lines
+    for (const line of firstLines) {
+      const cleanLine = line.trim();
+      // Skip lines that look like headers or contact info
+      if (cleanLine && 
+          !cleanLine.match(/^(resume|cv|curriculum vitae|contact|phone|email|linkedin|github)/i) &&
+          !cleanLine.match(/^\d/) && // Skip lines starting with numbers
+          !cleanLine.match(/^[A-Z\s]+$/) && // Skip all-caps lines
+          cleanLine.length > 2 && cleanLine.length < 50) { // Reasonable name length
+        
+        // Split the line into words and take only first two words
+        const words = cleanLine.split(/\s+/).filter(word => word.length > 0);
+        if (words.length >= 2) {
+          // Take only first and last name
+          return `${words[0]} ${words[1]}`;
+        }
+      }
+    }
+    return '';
+  }
+
   return (
     <div className="container mx-auto py-8">
       <div className="max-w-2xl mx-auto p-6 bg-white rounded-lg shadow-lg">
@@ -201,6 +315,28 @@ export default function ResumeUpload({ onResumeSubmit }: ResumeUploadProps) {
         >
           Clear Stored Data
         </button>
+
+        <div className="mb-6">
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Upload Resume (PDF)
+          </label>
+          <input
+            type="file"
+            accept="application/pdf"
+            onChange={handlePdfUpload}
+            className="block w-full text-sm text-gray-500
+              file:mr-4 file:py-2 file:px-4
+              file:rounded-md file:border-0
+              file:text-sm file:font-semibold
+              file:bg-blue-50 file:text-blue-700
+              hover:file:bg-blue-100"
+          />
+          {pdfFile && (
+            <p className="mt-2 text-sm text-gray-500">
+              Selected file: {pdfFile.name}
+            </p>
+          )}
+        </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>

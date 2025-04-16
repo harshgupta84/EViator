@@ -3,7 +3,8 @@ import React, { useEffect, useState } from "react";
 import { ArrowLeft, Clock, Calendar, Award, Code, MessageSquare, User, CheckCircle, XCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 // import { GoogleGenAI } from "@google/genai";
-import { STORAGE_KEY, GEMINI_API_KEY } from "../utils/env";
+import { STORAGE_KEY } from "../utils/env";
+import { getAIResponse } from "../services/aiService";
 
 interface Resume {
   fullName: string;
@@ -157,8 +158,6 @@ export function InterviewReport() {
       return generateSampleAIFeedback();
       
       /* Actual API implementation (commented for demo)
-      const genAI = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
-      
       const prompt = `
       You are a technical interviewer. Review this complete interview data and provide feedback:
       
@@ -208,13 +207,7 @@ export function InterviewReport() {
         "totalScore": <0-100>
       }`;
 
-      const result = await genAI.models.generateContent({
-        model: "gemini-2.5-pro-exp-03-25",
-        contents: prompt,
-      });
-
-      
-      const text = result.text || "";
+      const text = await getAIResponse(prompt);
       return JSON.parse(text);
       */
     } catch (error) {

@@ -1,9 +1,9 @@
 // InterviewSystem.tsx
 import React, { useState } from 'react';
-import { GoogleGenAI } from "@google/genai";
 import pdfToText from 'react-pdftotext';
 import { defaultQuestions } from '../data/interviewData';
-import { STORAGE_KEY, GEMINI_API_KEY } from '../utils/env';
+import { STORAGE_KEY } from '../utils/env';
+import { getAIResponse } from '../services/aiService';
 
 interface Resume {
   fullName: string;
@@ -26,27 +26,16 @@ interface StoredData {
 
 const getStartingText = async (skills: string[]) => {
   try {
-    // const genAI = new GoogleGenAI({ apiKey: "AIzaSyC0tdEPQrEy5Is0iG9DnO1BVpAWIg-5dx0" });
-
-    // const prompt = `Generate a starting text for an interview based on the candidate's skills: ${skills.join(', ')}.`;
-
-    // const result = await genAI.models.generateContent({
-    //   model: "gemini-2.5-pro-exp-03-25",
-    //   contents: prompt,
-    // });
-
-    // return result.text || '';
-    return `Starting text for the interview based on the candidate's skills: ${skills.join(', ')}.`;
+    const prompt = `Generate a starting text for an interview based on the candidate's skills: ${skills.join(', ')}.`;
+    return await getAIResponse(prompt);
   } catch (error) {
     console.error('Error generating starting text:', error);
-    throw error;
+    return `Starting text for the interview based on the candidate's skills: ${skills.join(', ')}.`;
   }
 };
 
 const getDSAQuestions = async (skills: string[]) => {
   try {
-    const genAI = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
-   
     const prompt = `As a technical interviewer, generate 4 programming questions based on the candidate's skills: ${skills.join(', ')}. 
 
     Format each question exactly as follows:
@@ -77,14 +66,8 @@ const getDSAQuestions = async (skills: string[]) => {
 
     Return only valid JSON with 4 questions following this exact structure.`;
 
-    const result = await genAI.models.generateContent({
-      model: "gemini-2.5-pro-exp-03-25",
-      contents: prompt,
-    });
-
-    const text = result.text || '';
+    const text = await getAIResponse(prompt);
     
-
     try {
       // Parse the JSON response
       const parsedResponse = JSON.parse(text);

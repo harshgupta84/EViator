@@ -3,8 +3,31 @@ import React, { useEffect, useState } from "react";
 import { ArrowLeft, Clock, Calendar, Award, Code, MessageSquare, User, CheckCircle, XCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 // import { GoogleGenAI } from "@google/genai";
-import { Question, Resume, StoredData } from "../types";
-import { STORAGE_KEY, generateSampleStoredData } from "../data/interviewData";
+
+interface Resume {
+  fullName: string;
+  email: string;
+  experience: string;
+  education: string;
+  skills: string[];
+}
+
+interface Question {
+  Question: string;
+  TestCase: string;
+  Output: string;
+}
+
+interface StoredData {
+  resume: Resume;
+  technicalQuestions: Question[];
+  feedback: string[];
+  code: string;
+  timestamp: number;
+  isCompleted?: boolean;
+  conversation?: string[];
+  duration?: number;
+}
 
 interface FeedbackPoint {
   category: string;
@@ -28,7 +51,6 @@ const generateSampleData = (): StoredData => {
       education: "Bachelor of Science in Computer Science, University of Technology, 2018",
       skills: ["JavaScript", "React", "Node.js", "TypeScript", "AWS", "MongoDB", "GraphQL", "Docker"]
     },
-    startingText: "Hello John, welcome to your technical interview. We'll be discussing your experience with React, JavaScript, and web technologies.",
     technicalQuestions: [
       {
         Question: "Explain how React's virtual DOM works and its advantages.",
@@ -195,14 +217,14 @@ export function InterviewReport() {
       return JSON.parse(text);
       */
     } catch (error) {
-      console.error('Error generating feedback:', error);
+      console.error("Error generating feedback:", error);
       return generateSampleAIFeedback();
     }
   };
 
   useEffect(() => {
     const loadData = async () => {
-      const stored = localStorage.getItem(STORAGE_KEY);
+      const stored = localStorage.getItem("interview_data");
       
       if (stored) {
         const data = JSON.parse(stored);
@@ -215,52 +237,7 @@ export function InterviewReport() {
         }
       } else {
         // Use sample data when no real data exists
-        const sampleData = generateSampleStoredData();
-        setInterviewData({
-          ...sampleData,
-          isCompleted: true,
-          conversation: [
-            "Interviewer: Hello, welcome to the technical interview. How are you today?",
-            "Candidate: Hi, I'm doing well, thank you. I'm excited for this opportunity.",
-            "Interviewer: Great! Let's start with some basic questions about your experience with React.",
-            "Candidate: Sounds good, I've been working with React for about 4 years now.",
-            "Interviewer: Can you explain how React's virtual DOM works and its advantages?",
-            "Candidate: Sure! React's virtual DOM is an in-memory representation of the actual DOM...",
-            "Interviewer: Excellent explanation. Now let's move on to a coding problem...",
-          ],
-          feedback: [
-            "Strong technical knowledge in frontend technologies",
-            "Communicated clearly and effectively throughout the interview",
-            "Good problem-solving approach, explaining thought process before implementation",
-            "Could improve knowledge of system design concepts"
-          ],
-          code: `function findFirstNonRepeatingChar(str) {
-  if (!str || str.length === 0) {
-    return null;
-  }
-  
-  const charMap = new Map();
-  
-  // Count occurrences of each character
-  for (const char of str) {
-    charMap.set(char, (charMap.get(char) || 0) + 1);
-  }
-  
-  // Find first character with count of 1
-  for (const char of str) {
-    if (charMap.get(char) === 1) {
-      return char;
-    }
-  }
-  
-  // No non-repeating character found
-  return null;
-}
-
-// Test with example
-console.log(findFirstNonRepeatingChar('programming')); // Output: 'p'`,
-          duration: 45 * 60 * 1000 // 45 minutes in milliseconds
-        });
+        setInterviewData(generateSampleData());
         setAIFeedback(generateSampleAIFeedback());
       }
       
@@ -511,7 +488,7 @@ console.log(findFirstNonRepeatingChar('programming')); // Output: 'p'`,
           </div>
           
           <ul className="space-y-2">
-            {interviewData.feedback?.map((point, index) => (
+            {interviewData.feedback.map((point, index) => (
               <li key={index} className="flex items-start">
                 <span className="text-blue-600 mr-2">•</span>
                 <span className="text-gray-700">{point}</span>

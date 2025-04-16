@@ -97,3 +97,21 @@ Nest is an MIT-licensed open source project. It can grow thanks to the sponsors 
 ## License
 
 Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+
+## Swagger API Documentation
+
+This project includes Swagger API documentation. To access it:
+
+1. Install the required dependency:
+   ```bash
+   npm install --save @nestjs/swagger
+   ```
+
+2. Start the application:
+   ```bash
+   npm run start:dev
+   ```
+
+3. Navigate to `http://localhost:3000/api` in your browser to view the API documentation.
+
+The Swagger UI provides a comprehensive view of all available API endpoints, request/response models, and allows you to test the API directly from the browser.

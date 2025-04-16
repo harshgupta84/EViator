@@ -3,6 +3,7 @@ import React, { useEffect, useState } from "react";
 import { ArrowLeft, Clock, Calendar, Award, Code, MessageSquare, User, CheckCircle, XCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 // import { GoogleGenAI } from "@google/genai";
+import { STORAGE_KEY, GEMINI_API_KEY } from "../utils/env";
 
 interface Resume {
   fullName: string;
@@ -156,7 +157,7 @@ export function InterviewReport() {
       return generateSampleAIFeedback();
       
       /* Actual API implementation (commented for demo)
-      const genAI = new GoogleGenAI({ apiKey: "AIzaSyCDrmK97AyjO07DqBEFw9T9FDwk5J5lyT8" });
+      const genAI = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
       
       const prompt = `
       You are a technical interviewer. Review this complete interview data and provide feedback:
@@ -217,14 +218,14 @@ export function InterviewReport() {
       return JSON.parse(text);
       */
     } catch (error) {
-      console.error("Error generating feedback:", error);
+      console.error('Error generating feedback:', error);
       return generateSampleAIFeedback();
     }
   };
 
   useEffect(() => {
     const loadData = async () => {
-      const stored = localStorage.getItem("interview_data");
+      const stored = localStorage.getItem(STORAGE_KEY);
       
       if (stored) {
         const data = JSON.parse(stored);

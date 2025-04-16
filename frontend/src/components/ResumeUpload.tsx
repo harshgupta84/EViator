@@ -2,6 +2,8 @@
 import React, { useState } from 'react';
 import { GoogleGenAI } from "@google/genai";
 import pdfToText from 'react-pdftotext';
+import { defaultQuestions } from '../data/interviewData';
+import { STORAGE_KEY, GEMINI_API_KEY } from '../utils/env';
 
 interface Resume {
   fullName: string;
@@ -21,8 +23,6 @@ interface StoredData {
   technicalQuestions: Question[];
   timestamp: number;
 }
-
-const STORAGE_KEY = 'interview_data';
 
 const getStartingText = async (skills: string[]) => {
   try {
@@ -45,7 +45,7 @@ const getStartingText = async (skills: string[]) => {
 
 const getDSAQuestions = async (skills: string[]) => {
   try {
-    const genAI = new GoogleGenAI({ apiKey: "AIzaSyCDrmK97AyjO07DqBEFw9T9FDwk5J5lyT8" });
+    const genAI = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
    
     const prompt = `As a technical interviewer, generate 4 programming questions based on the candidate's skills: ${skills.join(', ')}. 
 
@@ -106,31 +106,6 @@ const getDSAQuestions = async (skills: string[]) => {
     return defaultQuestions;
   }
 };
-
-// Default questions to use as fallback
-const defaultQuestions: Question[] = [
-  {
-    Question: 'Sort the array using the quick sort algorithm',
-    TestCase: 'Input: [3, 1, 4, 1, 5]',
-    Output: '[1, 1, 3, 4, 5]'
-  },
-  {
-    Question: 'Find the longest common prefix in an array of strings',
-    TestCase: 'Input: ["flower", "flow", "flight"]',
-    Output: '"fl"'
-  },
-  {
-    Question: 'Implement a binary search algorithm',
-    TestCase: 'Input: [1, 2, 3, 4, 5], Target: 3',
-    Output: 'Index 2'
-  },
-  {
-    Question: 'Design a rate limiter for an API',
-    TestCase: 'Input: maxRequests = 3, timeWindow = 1s',
-    Output: 'Boolean response indicating if request is allowed'
-  }
-];
-
 
 interface ResumeUploadProps {
   onResumeSubmit: (resume: Resume) => void;

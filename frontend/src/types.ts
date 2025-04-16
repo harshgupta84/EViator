@@ -44,3 +44,22 @@ export type ProgrammingLanguage = {
   extension: string;
   language: string;
 };
+
+// Added interfaces for the resume upload component
+export interface Question {
+  Question: string;
+  TestCase: string;
+  Output: string;
+}
+
+export interface StoredData {
+  resume: Resume;
+  startingText: string;
+  technicalQuestions: Question[];
+  timestamp: number;
+  isCompleted?: boolean;
+  conversation?: string[];
+  feedback?: string[];
+  code?: string;
+  duration?: number;
+}

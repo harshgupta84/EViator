@@ -13,6 +13,7 @@
     "@google/genai": "^0.7.0",
     "@monaco-editor/react": "^4.6.0",
     "@vapi-ai/web": "^2.2.5",
+    "axios": "^1.8.4",
     "lucide-react": "^0.344.0",
     "pdfjs-dist": "^4.0.379",
     "react": "^18.3.1",

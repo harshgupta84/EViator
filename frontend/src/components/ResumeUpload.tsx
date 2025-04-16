@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import pdfToText from 'react-pdftotext';
 import { defaultQuestions } from '../data/interviewData';
+import { getStartingTextPrompt, getTechnicalQuestionsPrompt } from '../data/promptData';
 import { STORAGE_KEY } from '../utils/env';
 import { getAIResponse } from '../services/aiService';
 
@@ -26,7 +27,7 @@ interface StoredData {
 
 const getStartingText = async (skills: string[]) => {
   try {
-    const prompt = `Generate a starting text for an interview based on the candidate's skills: ${skills.join(', ')}.`;
+    const prompt = getStartingTextPrompt(skills);
     return await getAIResponse(prompt);
   } catch (error) {
     console.error('Error generating starting text:', error);
@@ -36,36 +37,7 @@ const getStartingText = async (skills: string[]) => {
 
 const getDSAQuestions = async (skills: string[]) => {
   try {
-    const prompt = `As a technical interviewer, generate 4 programming questions based on the candidate's skills: ${skills.join(', ')}. 
-
-    Format each question exactly as follows:
-
-    {
-      "questions": [
-        {
-          "Question": "<clear problem statement>",
-          "TestCase": "<specific input format and example>",
-          "Output": "<expected output for the test case>"
-        }
-      ]
-    }
-
-    Requirements for questions:
-    1. First question should be Easy (array/string manipulation)
-    2. Second question should be Medium (data structures: trees/linked lists/stacks)
-    3. Third question should be Medium-Hard (algorithms: dynamic programming/graphs)
-    4. Fourth question should be System Design or Advanced Concept based on candidate's skills
-
-    Guidelines:
-    - Questions should be clear and concise
-    - Test cases should be specific with exact input format
-    - Expected output should match the test case
-    - Questions should progressively increase in difficulty
-    - Include relevant skills from: ${skills.join(', ')}
-    - Each question should test different aspects of programming
-
-    Return only valid JSON with 4 questions following this exact structure.`;
-
+    const prompt = getTechnicalQuestionsPrompt(skills);
     const text = await getAIResponse(prompt);
     
     try {

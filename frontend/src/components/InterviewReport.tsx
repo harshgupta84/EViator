@@ -5,6 +5,7 @@ import { useNavigate } from "react-router-dom";
 // import { GoogleGenAI } from "@google/genai";
 import { STORAGE_KEY } from "../utils/env";
 import { getAIResponse } from "../services/aiService";
+import { getInterviewFeedbackPrompt } from "../data/promptData";
 
 interface Resume {
   fullName: string;
@@ -158,54 +159,15 @@ export function InterviewReport() {
       return generateSampleAIFeedback();
       
       /* Actual API implementation (commented for demo)
-      const prompt = `
-      You are a technical interviewer. Review this complete interview data and provide feedback:
-      
-      CANDIDATE INFORMATION:
-      Name: ${data.resume.fullName}
-      Skills: ${data.resume.skills.join(", ")}
-      Experience: ${data.resume.experience}
-      Education: ${data.resume.education}
-      
-      TECHNICAL ASSESSMENT:
-      Questions Asked: ${data.technicalQuestions
-        .map((q, i) => `\nQ${i + 1}: ${q.Question}`)
-        .join("")}
-      
-      CODE SUBMISSION:
-      ${data.code}
-      
-      INTERVIEW CONVERSATION:
-      ${data.conversation?.join("\n")}
-      
-      Based on this complete interview, provide feedback in this exact JSON format:
-      
-      {
-        "evaluationPoints": [
-          {
-            "category": "Technical Knowledge",
-            "score": <1-10>,
-            "comment": "<one-line evaluation based on technical responses and code>"
-          },
-          {
-            "category": "Problem Solving",
-            "score": <1-10>,
-            "comment": "<one-line evaluation of approach and solutions>"
-          },
-          {
-            "category": "Communication",
-            "score": <1-10>,
-            "comment": "<one-line evaluation of articulation and clarity>"
-          },
-          {
-            "category": "Overall Attitude",
-            "score": <1-10>,
-            "comment": "<one-line evaluation of professionalism and enthusiasm>"
-          }
-        ],
-        "overallFeedback": "<3-4 sentences summarizing performance, strengths, and improvement areas>",
-        "totalScore": <0-100>
-      }`;
+      const prompt = getInterviewFeedbackPrompt(
+        data.resume.fullName,
+        data.resume.skills,
+        data.resume.experience,
+        data.resume.education,
+        data.technicalQuestions,
+        data.code || '',
+        data.conversation || []
+      );
 
       const text = await getAIResponse(prompt);
       return JSON.parse(text);

@@ -5,22 +5,12 @@ import MultiLangIDE from './MultiLangIDE';
 import InterviwerCrad from './InterviwerCard';
 import { useNavigate } from 'react-router-dom';
 import QuestionDisplay from './QuestionDisplay';
+import { Resume,Question } from '../types/interviewTypes';
+
 
 const vapi = new Vapi("89d9dcde-d231-405e-888b-634fb4c6ed91");
 
-interface Resume {
-  fullName: string;
-  email: string;
-  experience: string;
-  education: string;
-  skills: string[];
-}
 
-interface Question {
-  Question: string;
-  TestCase: string;
-  Output: string;
-}
 
 interface StoredData {
   resume: Resume;

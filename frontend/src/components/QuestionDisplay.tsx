@@ -1,13 +1,8 @@
 import React from 'react';
 import ReactMarkdown from 'react-markdown';
 import { GoogleGenAI } from '@google/genai';
+import { Question } from '../types/interviewTypes';
 
-
-interface Question {
-  Question: string;
-  TestCase: string;
-  Output: string;
-}
 
 interface QuestionDisplayProps {
   question: Question | null;

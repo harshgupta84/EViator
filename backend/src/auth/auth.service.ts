@@ -2,13 +2,14 @@ import { Injectable, ConflictException, UnauthorizedException, BadRequestExcepti
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import * as bcrypt from 'bcrypt';
-import { JwtService } from '@nestjs/jwt';
+import * as jwt from 'jsonwebtoken';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class AuthService {
   constructor(
     @InjectModel('User') private userModel: Model<any>,
-    private jwtService: JwtService,
+    private configService: ConfigService,
   ) {}
 
   async signup(email: string, password: string) {
@@ -25,10 +26,12 @@ export class AuthService {
         }
         
         // Generate JWT token
-        const accessToken = await this.jwtService.signAsync({
-          email: existingUser.email,
-          sub: existingUser._id,
-        });
+        const secret = this.configService.get<string>('JWT_SECRET', 'default-secret');
+        const accessToken = jwt.sign(
+          { email: existingUser.email, sub: existingUser._id },
+          secret,
+          { expiresIn: '1h' }
+        );
         
         return { 
           message: 'Login successful', 
@@ -53,10 +56,12 @@ export class AuthService {
       });
       
       // Generate JWT token for new user
-      const accessToken = await this.jwtService.signAsync({
-        email: newUser.email,
-        sub: newUser._id,
-      });
+      const secret = this.configService.get<string>('JWT_SECRET', 'default-secret');
+      const accessToken = jwt.sign(
+        { email: newUser.email, sub: newUser._id },
+        secret,
+        { expiresIn: '1h' }
+      );
       
       return {
         message: 'User registered successfully',
